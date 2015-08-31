@@ -10,6 +10,7 @@ using System.Data.SqlClient;
 public partial class Lesson_5 : System.Web.UI.Page
 {
     int k = 1;
+    int temp = 0;
     string[] Pic_url = { "https://photos-4.dropbox.com/t/2/AADCOCrxvefvW-FXSCdo0Icfb3r84dJia0qScgvGot1K9A/12/36943375/png/32x32/1/_/1/2/1.png/ENiPjRwYmjwgAigC/rjGHh0xbA_rU-bfp0jsb4IocUOdSqCYAQ-FFRyx27TY?size=1024x768&size_mode=2",
                          "https://photos-6.dropbox.com/t/2/AADulJXJYaFhqYVQ74AKFXmm_x5e7XwWgmZ9kAX44tvliw/12/36943375/png/32x32/1/_/1/2/2.png/ENiPjRwYmjwgAigC/Od_stS3RmxeJkoFiYLD98m88lF_w7J0B0zbEJRvdA1E?size=1024x768&size_mode=2",
                          "https://photos-5.dropbox.com/t/2/AABoKOSaAEURaTO9c8H-UhqYaelCftXPYD4tU-J9OASV6A/12/36943375/png/32x32/1/_/1/2/3.png/ENiPjRwYmjwgAigC/82K31iLl9UhuU0-A_7hQbJJI-sTPBQhFIHrhSoIn0gs?size=1024x768&size_mode=2",
@@ -28,8 +29,7 @@ public partial class Lesson_5 : System.Web.UI.Page
     int[] random_num = new int[6];
     //用于保存返回结果     
     int[] result = new int[6];
-
-    public void Page_Load(object sender, EventArgs e)
+    protected void Page_Load(object sender, EventArgs e)
     {
         Response.Write("<H2>說明：左圖為受測者要評分圖片，右圖為標準圖，標準圖分數為10分，如左圖畫的接近標準圖，請給予高分；反之，請給予低分，滿分為10分</H2>");
         Response.Write("<H2>請輸入分數:(左圖:評分圖片;右圖:標準圖)</H2>");
@@ -39,6 +39,7 @@ public partial class Lesson_5 : System.Web.UI.Page
             //產生一個Cookie
             HttpCookie cookie = new HttpCookie("rand_num");
             HttpCookie cookie_k = new HttpCookie("k");
+            HttpCookie cookie_temp = new HttpCookie("temp");
             //設定單值
             cookie_k.Value = Server.UrlEncode(k.ToString());
             //設定過期日
@@ -47,12 +48,18 @@ public partial class Lesson_5 : System.Web.UI.Page
             Response.Cookies.Add(cookie_k);
 
 
+            cookie_temp.Value = Server.UrlEncode(k.ToString());
+            //設定過期日
+            cookie_temp.Expires = DateTime.Now.AddHours(1);
+            //寫到用戶端
+            Response.Cookies.Add(cookie_temp);
+
 
             string r = "";
             Random random = new Random();
-            for (int i = 1; i <= 6; i++)
+            for (int i = 0; i <= 5; i++)
             {
-                random_num[i - 1] = i;
+                random_num[i] = i;
             }
 
 
@@ -74,7 +81,7 @@ public partial class Lesson_5 : System.Web.UI.Page
             }
             for (int i = 0; i < random_num.Length; i++)
             {
-                if (i < 6)
+                if (i < 5)
                     r += random_num[i] + ",";
                 else
                     r += random_num[i];
@@ -90,66 +97,85 @@ public partial class Lesson_5 : System.Web.UI.Page
             cookie.Expires = DateTime.Now.AddHours(1);
             //寫到用戶端
             Response.Cookies.Add(cookie);
-            Image2.ImageUrl = Pic_url[random_num[0] - 1];//random show picture
-            Image3.ImageUrl = "https://photos-3.dropbox.com/t/2/AAD3lKm8ryo85_RkUSxfB9TNjxkeok5hnlrqNmO_2CrD4A/12/36943375/png/32x32/1/_/1/2/origin.PNG/ENiPjRwYmjwgAigC/TWvixNLh6U_vYoSC6oGbL5wENc5M63wLfaSnei6Gqv4?size=1024x768&size_mode=2";
-            Image2.Width = Unit.Pixel(350);
-            Image3.Width = Unit.Pixel(350);
-        }
-        else
-        {
-            //rand2 = random_num;
-            //result2=
-        }
 
-
+            Image2.ImageUrl = Pic_url[random_num[0]];//random show picture
+            Response.Write("Pic_url:" + random_num[0]);
+            Image3.ImageUrl = "https://photos-6.dropbox.com/t/2/AAAa-T1iIlVcNZomG4bP45CK6SVmS2qhuT3mJMaH1AihSQ/12/36943375/png/32x32/1/_/1/2/origin.PNG/ENiPjRwY_DwgAigC/TWvixNLh6U_vYoSC6oGbL5wENc5M63wLfaSnei6Gqv4?size=1024x768&size_mode=2";
+            Image2.Width = Unit.Pixel(380);
+            Image3.Width = Unit.Pixel(380);
+        }
     }
     protected void Button1_Click(object sender, EventArgs e)
     {
-
         HttpCookie cookie = Request.Cookies["rand_num"];
         HttpCookie cookie_k = Request.Cookies["k"];
-
+        HttpCookie cookie_temp = Request.Cookies["temp"];
         string r = Server.UrlDecode(cookie.Value);
         string[] rand_r = r.Split(',');
         int k = int.Parse(Server.UrlDecode(cookie_k.Value));
-
-        if (k != 6)
+        int temp = int.Parse(Server.UrlDecode(cookie_temp.Value));
+        for (int i = 0; i < 6; i++)
         {
-            for (int i = 0; i < 6; i++)
-            {
-                random_num[i] = int.Parse(rand_r[i]);
-                Response.Write("b:" + random_num[i]);  //random數字放入陣列
-            }
-            SqlConnection conn = new SqlConnection("data source=localhost;initial catalog=myDB;Integrated Security=SSPI;");
-            conn.Open();
-            SqlCommand cmd = new SqlCommand("Insert Into Pic_score (Lesson,Test_pic,Score) Values(5," + int.Parse(Pic_ID[k-1]) + ",@paramScore)", conn);
-            cmd.Parameters.Add("@paramScore", SqlDbType.Int, 4).Value = txtInput.Text;
-            cmd.ExecuteNonQuery();
-            cmd.Dispose();
-            conn.Close();
-            conn.Dispose();
+            random_num[i] = int.Parse(rand_r[i]);
+            Response.Write("b:" + random_num[i]);  //random數字放入陣列
+        }
+
+        if (k != 6 && temp != 0)
+        {
+            SqlConnection conn3 = new SqlConnection("data source=localhost;initial catalog=myDB;Integrated Security=SSPI;");
+            conn3.Open();
+            SqlCommand cmd3 = new SqlCommand("Insert Into Pic_score (Lesson,Test_pic,Score) Values(5," + int.Parse(Pic_ID[random_num[k - 1]]) + ",@paramScore)", conn3);
+            cmd3.Parameters.Add("@paramScore", SqlDbType.Int, 4).Value = txtInput.Text;
+            cmd3.ExecuteNonQuery();
+            cmd3.Dispose();
+            conn3.Close();
+            conn3.Dispose();
 
 
-            Image2.ImageUrl = Pic_url[random_num[k] - 1];//random show picture
-            Image3.ImageUrl = "https://photos-3.dropbox.com/t/2/AAD3lKm8ryo85_RkUSxfB9TNjxkeok5hnlrqNmO_2CrD4A/12/36943375/png/32x32/1/_/1/2/origin.PNG/ENiPjRwYmjwgAigC/TWvixNLh6U_vYoSC6oGbL5wENc5M63wLfaSnei6Gqv4?size=1024x768&size_mode=2";
-            Image2.Width = Unit.Pixel(350);
-            Image3.Width = Unit.Pixel(350);
+            Image2.ImageUrl = Pic_url[random_num[k]];//random show picture
+            Image3.ImageUrl = "https://photos-6.dropbox.com/t/2/AAAa-T1iIlVcNZomG4bP45CK6SVmS2qhuT3mJMaH1AihSQ/12/36943375/png/32x32/1/_/1/2/origin.PNG/ENiPjRwY_DwgAigC/TWvixNLh6U_vYoSC6oGbL5wENc5M63wLfaSnei6Gqv4?size=1024x768&size_mode=2";
+            Image2.Width = Unit.Pixel(380);
+            Image3.Width = Unit.Pixel(380);
+
+
+
+            k = k + 1;
+        }
+        else if (k == 6)
+        {
+            SqlConnection conn2 = new SqlConnection("data source=localhost;initial catalog=myDB;Integrated Security=SSPI;");
+            conn2.Open();
+            SqlCommand cmd2 = new SqlCommand("Insert Into Pic_score (Lesson,Test_pic,Score) Values(5," + int.Parse(Pic_ID[random_num[5]]) + ",@paramScore)", conn2);
+            cmd2.Parameters.Add("@paramScore", SqlDbType.Int, 4).Value = txtInput.Text;
+            cmd2.ExecuteNonQuery();
+            cmd2.Dispose();
+            conn2.Close();
+            conn2.Dispose();
             Response.Write(k);
-            k++;
+            Response.Redirect("Lesson_end.aspx");
+
         }
-        else
+
+        if (temp == 0)
         {
             SqlConnection conn = new SqlConnection("data source=localhost;initial catalog=myDB;Integrated Security=SSPI;");
             conn.Open();
-            SqlCommand cmd = new SqlCommand("Insert Into Pic_score (Lesson,Test_pic,Score) Values(5," + int.Parse(Pic_ID[k - 1]) + ",@paramScore)", conn);
+            SqlCommand cmd = new SqlCommand("Insert Into Pic_score (Lesson,Test_pic,Score) Values(5," + int.Parse(Pic_ID[random_num[0]]) + ",@paramScore)", conn);
             cmd.Parameters.Add("@paramScore", SqlDbType.Int, 4).Value = txtInput.Text;
             cmd.ExecuteNonQuery();
             cmd.Dispose();
             conn.Close();
             conn.Dispose();
-            Response.Redirect("Lesson_end.aspx");
-        }
 
+            Image2.ImageUrl = Pic_url[random_num[k]];//random show picture
+            Image3.ImageUrl = "https://photos-6.dropbox.com/t/2/AAAa-T1iIlVcNZomG4bP45CK6SVmS2qhuT3mJMaH1AihSQ/12/36943375/png/32x32/1/_/1/2/origin.PNG/ENiPjRwY_DwgAigC/TWvixNLh6U_vYoSC6oGbL5wENc5M63wLfaSnei6Gqv4?size=1024x768&size_mode=2";
+            Image2.Width = Unit.Pixel(380);
+            Image3.Width = Unit.Pixel(380);
+
+
+            temp = temp + 1;
+            k = k + 1;
+        }
         cookie_k = new HttpCookie("k");
         //設定單值
         cookie_k.Value = Server.UrlEncode(k.ToString());
@@ -157,6 +183,17 @@ public partial class Lesson_5 : System.Web.UI.Page
         cookie_k.Expires = DateTime.Now.AddHours(1);
         //寫到用戶端
         Response.Cookies.Add(cookie_k);
+
+
+
+        cookie_temp = new HttpCookie("temp");
+        //設定單值
+        cookie_temp.Value = Server.UrlEncode(temp.ToString());
+        //設定過期日
+        cookie_temp.Expires = DateTime.Now.AddHours(1);
+        //寫到用戶端
+        Response.Cookies.Add(cookie_temp);
+
         txtInput.Text = "";
     }
     protected void TextBox1_TextChanged(object sender, EventArgs e)
